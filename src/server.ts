@@ -1,5 +1,7 @@
 import express, { Request, Response } from 'express';
 import router from './routes';
+import 'dotenv/config';
+import { GeminiService } from './services/GeminiService';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,4 +16,7 @@ app.get('/healthz', (_: Request, res: Response) => {
 
 app.listen(PORT, () => {
     console.log(`[server] rodada na porta ${PORT}`);
+
+    const gemini = new GeminiService();
+    gemini.testarConexao();
 });
