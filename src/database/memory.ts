@@ -1,3 +1,5 @@
+import { ResultadoExtracao } from "../types/documentos";
+
 export type StatusTranscricao = 'processando' | 'concluido' | 'erro';
 
 export interface ITranscricao {
@@ -5,7 +7,7 @@ export interface ITranscricao {
   tipo: "cartao-ponto" | "holerite";
   status: StatusTranscricao;
   erro: string | null;
-  value: any | null;
+  value: ResultadoExtracao | null;
 }
 
 export const db = new Map<string, ITranscricao>();

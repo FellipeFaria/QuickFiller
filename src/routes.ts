@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { upload } from "./config/multer";
 import { TranscricaoController } from "./controllers/TranscicaoController";
+import { GeminiService } from "./services/GeminiService";
 
 const router = Router();
-const transcricaoController = new TranscricaoController();
+const geminiService = new GeminiService();
+const transcricaoController = new TranscricaoController(geminiService);
 
 router.post(
   '/transcricoes',

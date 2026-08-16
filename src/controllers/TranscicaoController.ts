@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { db, ITranscricao } from '../database/memory';
+import { GeminiService } from '../services/GeminiService';
 
 export class  TranscricaoController {
+  constructor(private geminiService: GeminiService) {}
+
   public upload = (req: Request, res: Response): void => {
     try {
       const { tipo } = req.body;
@@ -29,6 +32,23 @@ export class  TranscricaoController {
       };
 
       db.set(id, novoRegistro);
+
+      this.geminiService.processarDocumento(file.buffer, file.mimetype, tipo)
+        .then((resultJson) => {
+          const registroAtual = db.get(id);
+
+          if (registroAtual) {
+            db.set(id, { ...registroAtual, status: 'concluido', value: resultJson });
+            console.log(`[Controller] Transcrição ${id} concluída e salva!`);
+          }
+        })
+        .catch((erroDaIA) => {
+          const registroAtual = db.get(id);
+          if (registroAtual) {
+            db.set(id, { ...registroAtual, status: 'erro', erro: erroDaIA.message });
+            console.log(`[Controller] Transcrição ${id} falhou.`);
+          }
+        });
 
       res.status(202).json({ id });
     } catch (error: any) {
