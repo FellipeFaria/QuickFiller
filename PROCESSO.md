@@ -16,6 +16,9 @@ O desenvolvimento desta solução contou com o auxílio de IA (LLMs) tanto para 
    - **O erro:** Inicialmente, a IA tentou formatar a aba de impostos inventando colunas vazias só para caber na estrutura.
    - **A correção:** O prompt de sistema foi reescrito rigidamente com Few-Shot Prompting, adicionando condicionais lógicas no Service para separar o prompt de Holerite do prompt de Cartão de Ponto, forçando o motor a usar null e o caractere \`?\` em caso de dúvida.
 
+3. **Tratamento de Rate Limits (HTTP 429):**
+   Durante os testes de estresse em produção, observei o comportamento do sistema ao atingir o teto do Free Tier da API do Gemini (Erro 429 - Resource Exhausted). A arquitetura atual captura a exceção no `catch` do `GeminiService` e sinaliza o status do banco como "erro", permitindo que o usuário tente novamente sem derrubar o servidor. Em um cenário real com infraestrutura paga, a solução definitiva envolveria implementar um mecanismo de Exponential Backoff (ex: bibliotecas como `p-retry` ou `axios-retry`) para segurar a requisição na fila e tentar de novo automaticamente após 30 segundos, deixando a instabilidade da API invisível para o usuário final.
+
 ## Respostas Obrigatórias
 
 ### 1. Cite 3 decisões em que havia mais de uma resposta razoável. Por que escolheu essa?
