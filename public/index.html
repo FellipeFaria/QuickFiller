@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickFiller - Tester</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f4f4f9; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: #2c3e50; text-align: center; }
+        h2 { margin-top: 0; color: #34495e; font-size: 1.2rem; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        input, select, button { padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        button { cursor: pointer; background-color: #3498db; color: white; border: none; font-weight: bold; transition: 0.2s; }
+        button:hover { background-color: #2980b9; }
+        button.success { background-color: #27ae60; }
+        button.success:hover { background-color: #219653; }
+        textarea { width: 100%; height: 300px; font-family: monospace; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; box-sizing: border-box; }
+        .status { margin-top: 10px; font-weight: bold; color: #555; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>QuickFiller - Painel de Testes</h1>
+
+    <div class="card">
+        <h2>1. Enviar Documento</h2>
+        <select id="tipoInput">
+            <option value="holerite">Holerite</option>
+            <option value="cartao-ponto">Cartão de Ponto</option>
+        </select>
+        <input type="file" id="arquivoInput" accept="application/pdf">
+        <button onclick="fazerUpload()">Enviar para IA</button>
+        <div id="uploadStatus" class="status"></div>
+    </div>
+
+    <div class="card">
+        <h2>2. Consultar Status / Editar</h2>
+        <input type="text" id="idInput" placeholder="Cole o ID da transcrição aqui" style="width: 60%;">
+        <button onclick="consultarStatus()">Buscar Dados</button>
+        <div id="consultaStatus" class="status"></div>
+
+        <div id="editorArea" class="hidden" style="margin-top: 15px;">
+            <textarea id="jsonEditor"></textarea>
+            <br>
+            <button onclick="salvarEdicao()">Salvar Edição</button>
+            <button class="success" onclick="baixarExcel()" style="float: right;">⬇ Baixar Planilha Excel</button>
+        </div>
+    </div>
+
+    <script>
+        async function fazerUpload() {
+            const arquivo = document.getElementById('arquivoInput').files[0];
+            const tipo = document.getElementById('tipoInput').value;
+            const statusDiv = document.getElementById('uploadStatus');
+
+            if (!arquivo) return alert('Selecione um arquivo PDF primeiro!');
+
+            const formData = new FormData();
+            formData.append('arquivo', arquivo);
+            formData.append('tipo', tipo);
+
+            statusDiv.innerHTML = 'Enviando...';
+
+            try {
+                const response = await fetch('/api/transcricoes', { method: 'POST', body: formData });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusDiv.innerHTML = `
+                      Sucesso! ID gerado: <strong style="color:#27ae60">${data.id}</strong> (copiando para o campo abaixo...)
+                    `;
+                    document.getElementById('idInput').value = data.id;
+                    document.getElementById('editorArea').classList.add('hidden');
+                } else {
+                    statusDiv.innerHTML = `Erro: ${data.erro}`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `Erro de conexão com a API.`;
+            }
+        }
+
+        async function consultarStatus() {
+            const id = document.getElementById('idInput').value.trim();
+            const statusDiv = document.getElementById('consultaStatus');
+            const editorArea = document.getElementById('editorArea');
+            const jsonEditor = document.getElementById('jsonEditor');
+
+            if (!id) return alert('Digite um ID para consultar.');
+
+            statusDiv.innerHTML = 'Consultando...';
+            editorArea.classList.add('hidden');
+
+            try {
+                const response = await fetch(`/api/transcricoes/${id}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.status === 'processando') {
+                        statusDiv.innerHTML = 'A IA ainda está processando. Clique em Buscar novamente em alguns segundos...';
+                    } else if (data.status === 'erro') {
+                        statusDiv.innerHTML = `A IA falhou: ${data.erro}`;
+                    } else if (data.status === 'concluido') {
+                        statusDiv.innerHTML = 'Processamento concluído! Você pode editar os dados abaixo se precisar.';
+                        jsonEditor.value = JSON.stringify(data.value, null, 4);
+                        editorArea.classList.remove('hidden');
+                    }
+                } else {
+                    statusDiv.innerHTML = `Erro: ${data.erro}`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `Erro de conexão com a API.`;
+            }
+        }
+
+        async function salvarEdicao() {
+            const id = document.getElementById('idInput').value.trim();
+            const texto = document.getElementById('jsonEditor').value;
+            
+            try {
+                const jsonValido = JSON.parse(texto); 
+                
+                const response = await fetch(`/api/transcricoes/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonValido)
+                });
+
+                if (response.ok) alert('JSON atualizado com sucesso no servidor!');
+                else alert('Erro ao atualizar JSON.');
+
+            } catch (error) {
+                alert('JSON inválido! Você esqueceu de fechar alguma aspa ou chave. Corrija antes de salvar.');
+            }
+        }
+
+        function baixarExcel() {
+            const id = document.getElementById('idInput').value.trim();
+            if (id) {
+                window.location.href = `/api/transcricoes/${id}/download`;
+            }
+        }
+    </script>
+</body>
+</html>

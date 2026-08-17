@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { ResultadoExtracao } from "../types/documentos";
 
 export class GeminiService {
-  private model: string = 'gemini-3.5-flash-lite';
+  private model: string = 'gemini-3.6-flash';
 
   private getAIClient(): GoogleGenAI {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -52,7 +52,6 @@ export class GeminiService {
         2. Se você estiver em dúvida sobre qualquer caractere ou número, substitua por "?".
         3. Se um campo estiver em branco ou não existir, omita ou deixe nulo, não invente dados.
         4. O JSON deve seguir EXATAMENTE a estrutura exigida.
-        5. RETORNE O JSON COMPLETAMENTE MINIFICADO. Não use NENHUMA quebra de linha, espaços em branco ou indentação. O JSON inteiro deve ser retornado em uma única linha contínua.de impostos/FGTS).
       `;
 
       let estruturaExigida = "";
@@ -105,7 +104,7 @@ export class GeminiService {
         ],
         config: {
           responseMimeType: "application/json",
-          maxOutputTokens: 8192,
+          maxOutputTokens: 65536,
           temperature: 0
         }
       });
