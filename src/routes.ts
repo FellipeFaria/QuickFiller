@@ -13,6 +13,11 @@ router.post(
   transcricaoController.upload
 );
 
+router.put(
+  '/transcricoes/:id',
+  transcricaoController.update
+);
+
 router.get(
   '/transcricoes/:id',
   transcricaoController.getStatus

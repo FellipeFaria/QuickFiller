@@ -56,6 +56,38 @@ export class  TranscricaoController {
     }
   }
 
+  public update = (req: Request, res: Response): void => {
+    try {
+      const id = req.params.id as string;
+      const novoValor = req.body;
+
+      if (!novoValor || Object.keys(novoValor).length === 0) {
+        res.status(400).json({ erro: "O corpo da requisição não pode estar vazio." });
+        return;
+      }
+
+      const registro = db.get(id);
+
+      if (!registro) {
+        res.status(404).json({ erro: "Transcrição não encontrada." });
+        return;
+      }
+
+      const registroAtualizado = {
+        ...registro,
+        value: novoValor
+      };
+
+      db.set(id, registroAtualizado);
+
+      console.log(`[Controller] Transcrição ${id} editada com sucesso!`);
+
+      res.status(200).json(registroAtualizado);
+    } catch (error: any) {
+      res.status(500).json({ erro: error.message || 'Erro interno ao atualizar a transcrição.' });
+    }
+  }
+
   public getStatus = (req: Request, res: Response): void => {
     const id = req.params.id as string;
 

@@ -112,10 +112,6 @@ export class GeminiService {
 
       let textoResposta = response.text?.trim() || "{}";
 
-      console.log("================ RAW DA IA ================");
-      console.log(textoResposta);
-      console.log("===========================================");
-
       const jsonExtraido = JSON.parse(textoResposta) as ResultadoExtracao;
 
       console.log(`[GeminiService] Processamento finalizado com sucesso para o ID gerado!`)
