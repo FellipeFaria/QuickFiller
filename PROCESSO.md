@@ -16,8 +16,9 @@ O desenvolvimento desta solução contou com o auxílio de IA (LLMs) tanto para 
    - **O erro:** Inicialmente, a IA tentou formatar a aba de impostos inventando colunas vazias só para caber na estrutura.
    - **A correção:** O prompt de sistema foi reescrito rigidamente com Few-Shot Prompting, adicionando condicionais lógicas no Service para separar o prompt de Holerite do prompt de Cartão de Ponto, forçando o motor a usar null e o caractere \`?\` em caso de dúvida.
 
-3. **Tratamento de Rate Limits (HTTP 429):**
-   Durante os testes de estresse em produção, observei o comportamento do sistema ao atingir o teto do Free Tier da API do Gemini (Erro 429 - Resource Exhausted). A arquitetura atual captura a exceção no `catch` do `GeminiService` e sinaliza o status do banco como "erro", permitindo que o usuário tente novamente sem derrubar o servidor. Em um cenário real com infraestrutura paga, a solução definitiva envolveria implementar um mecanismo de Exponential Backoff (ex: bibliotecas como `p-retry` ou `axios-retry`) para segurar a requisição na fila e tentar de novo automaticamente após 30 segundos, deixando a instabilidade da API invisível para o usuário final.
+3. **Gestão de Quotas e Troubleshooting de Deploy (Erros 429 e 401):**
+   - **O erro:** Durante a bateria de testes exaustivos na nuvem (Render), o sistema estourou o limite gratuito do Gemini (20 requisições), retornando um Erro HTTP 429 (Resource Exhausted). Ao tentar substituir a chave de API nas variáveis de ambiente do Render para contornar o bloqueio, a aplicação passou a retornar o Erro HTTP 401 (Unauthenticated).
+   - **A correção:** O código da aplicação provou ser resiliente, capturando o erro 429 graciosamente no `catch` e atualizando o status da transcrição para "falhou" sem derrubar o servidor Node.js. O erro 401 subsequente foi diagnosticado como um problema de injeção de credenciais no deploy (espaços/aspas na variável do Render ou tentativa de acesso antes do término do novo *build*). A correção envolveu higienizar a string da `GEMINI_API_KEY` no painel da nuvem, aguardar o cold start do serviço e reiniciar os testes, normalizando o fluxo.
 
 ## Respostas Obrigatórias
 
